@@ -15,6 +15,9 @@ Frontend/build/
 *.mp3
 *.wav
 deepfake_audio_dataset_jay15k/
+*.wav
+*.flac
+*.ogg
 
 # Environment files
 .env
