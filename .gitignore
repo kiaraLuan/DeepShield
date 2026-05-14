@@ -5,12 +5,16 @@ __pycache__/
 
 # Uploads
 uploads/
+backend/uploads/
 
 # Frontend
 Frontend/node_modules/
+Frontend/build/
 
 # Audio/Test files
 *.mp3
+*.wav
+deepfake_audio_dataset_jay15k/
 
 # Environment files
 .env

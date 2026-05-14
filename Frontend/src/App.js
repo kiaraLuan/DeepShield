@@ -12,62 +12,62 @@ function App() {
   risk: "WAITING",
   text: "Upload media to begin analysis."
 });
-  const analyzeMedia = async () => {
 
+  const resetResult = (risk = "WAITING", text = "Upload media to begin analysis.") => {
+    setResult({
+      score: "0%",
+      risk,
+      text
+    });
+  };
+
+  const analyzeMedia = async () => {
   if (!selectedFile) {
     alert("Please upload a file");
     return;
   }
 
-  setLoading(true);
+  // Reset before each analysis
+  resetResult("ANALYZING", "Scanning media for synthetic voice artifacts...");
   setProgress(0);
+  setLoading(true);
+  setProgress(10);
 
-  let current = 0;
-
-  const interval = setInterval(() => {
-
-    current += 10;
-
-    setProgress(current);
-
-    if (current >= 100) {
-      clearInterval(interval);
-    }
-
-  }, 200);
+  const progressTimer = setInterval(() => {
+    setProgress((current) => Math.min(current + 10, 90));
+  }, 250);
 
   try {
-
     const formData = new FormData();
-
     formData.append("file", selectedFile);
 
-    const response = await fetch(
-      "http://127.0.0.1:8000/analyze/audio",
-      {
-        method: "POST",
-        body: formData,
-      }
-    );
+    const response = await fetch("http://127.0.0.1:8000/analyze/audio", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error("Backend analysis request failed.");
+    }
 
     const data = await response.json();
-
-    clearInterval(interval);
-
     setProgress(100);
-
-    setResult(data);
-
+    setResult({
+      score: data.score || "0%",
+      risk: data.risk || "ERROR",
+      text: data.text || "No analysis details returned."
+    });
   } catch (error) {
-
     console.error(error);
-
-    alert("Backend connection failed");
-
+    setResult({
+      score: "0%",
+      risk: "ERROR",
+      text: "Backend connection failed."
+    });
+  } finally {
+    clearInterval(progressTimer);
+    setLoading(false);
   }
-
-  setLoading(false);
-
 };
 
   return (
@@ -190,16 +190,20 @@ function App() {
   style={{ display: "none" }}
   onChange={(e) => {
 
-    if (e.target.files[0]) {
+  const file = e.target.files[0];
 
-      setSelectedFile(e.target.files[0]);
+  if (!file) return;
 
-      setFileName(
-        e.target.files[0].name
-      );
+  setSelectedFile(file);
 
-    }
-  }}
+  setFileName(file.name);
+
+  resetResult("READY", "Ready to analyze.");
+  setProgress(0);
+
+  // IMPORTANT
+  e.target.value = "";
+}}
 />
 
               <p
@@ -244,6 +248,7 @@ function App() {
 
             <button
               onClick={analyzeMedia}
+              disabled={loading}
               style={{
                 marginTop: "16px",
                 width: "100%",
@@ -255,7 +260,8 @@ function App() {
                 color: "white",
                 border: "none",
                 borderRadius: "999px",
-                cursor: "pointer",
+                cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.8 : 1,
                 boxShadow: "0 12px 30px rgba(37, 99, 235, 0.55)",
               }}
             >
@@ -352,11 +358,17 @@ function App() {
                   ? "rgba(220,38,38,0.15)"
                   : result.risk === "MEDIUM"
                   ? "rgba(234,179,8,0.15)"
-                  : "rgba(34,197,94,0.15)",
+                  : result.risk === "LOW"
+                  ? "rgba(34,197,94,0.15)"
+                  : result.risk === "ERROR"
+                  ? "rgba(239,68,68,0.15)"
+                  : "rgba(96,165,250,0.15)",
               marginBottom: "10px",
             }}
           >
-            {result.risk} RISK
+            {["HIGH", "MEDIUM", "LOW", "ERROR"].includes(result.risk)
+              ? `${result.risk} RISK`
+              : result.risk}
           </div>
 
           <div style={{ marginBottom: "12px" }}>
@@ -377,7 +389,11 @@ function App() {
     ? "#f87171"
     : result.risk === "MEDIUM"
     ? "#facc15"
-    : "#4ade80",
+    : result.risk === "LOW"
+    ? "#4ade80"
+    : result.risk === "ERROR"
+    ? "#f87171"
+    : "#60a5fa",
                   fontWeight: 600
                 }}
               >
@@ -403,13 +419,21 @@ function App() {
     ? "linear-gradient(to right, #f97316, #ef4444)"
     : result.risk === "MEDIUM"
     ? "linear-gradient(to right, #facc15, #eab308)"
-    : "linear-gradient(to right, #4ade80, #16a34a)",
+    : result.risk === "LOW"
+    ? "linear-gradient(to right, #4ade80, #16a34a)"
+    : result.risk === "ERROR"
+    ? "linear-gradient(to right, #f97316, #ef4444)"
+    : "linear-gradient(to right, #60a5fa, #2563eb)",
     boxShadow:
   result.risk === "HIGH"
     ? "0 0 18px rgba(239,68,68,0.5)"
     : result.risk === "MEDIUM"
     ? "0 0 18px rgba(250,204,21,0.5)"
-    : "0 0 18px rgba(74,222,128,0.5)",
+    : result.risk === "LOW"
+    ? "0 0 18px rgba(74,222,128,0.5)"
+    : result.risk === "ERROR"
+    ? "0 0 18px rgba(239,68,68,0.5)"
+    : "0 0 18px rgba(96,165,250,0.45)",
                 }}
               />
             </div>
