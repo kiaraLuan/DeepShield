@@ -5,60 +5,70 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [fileName, setFileName] = useState("");
   const [progress, setProgress] = useState(0);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   const [result, setResult] = useState({
-    score: "28%",
-    risk: "HIGH",
-    text: "Detected strong signs of vocoder artifacts and spectral anomalies commonly left by neural TTS systems."
-  });
+  score: "0%",
+  risk: "WAITING",
+  text: "Upload media to begin analysis."
+});
+  const analyzeMedia = async () => {
 
-  const analyzeMedia = () => {
-
-    setLoading(true);
-    setProgress(0);
-    let current = 0;
-
-const interval = setInterval(() => {
-
-  current += 10;
-
-  setProgress(current);
-
-  if (current >= 100) {
-    clearInterval(interval);
+  if (!selectedFile) {
+    alert("Please upload a file");
+    return;
   }
 
-}, 200);
+  setLoading(true);
+  setProgress(0);
 
-    setTimeout(() => {
+  let current = 0;
 
-      const fakeResults = [
-        {
-          score: "28%",
-          risk: "HIGH",
-          text: "Detected strong signs of vocoder artifacts and spectral anomalies commonly left by neural TTS systems."
-        },
-        {
-          score: "44%",
-          risk: "MEDIUM",
-          text: "Suspicious modulation and inconsistent phoneme energy patterns detected."
-        },
-        {
-          score: "91%",
-          risk: "LOW",
-          text: "Media appears authentic with natural environmental noise patterns."
-        }
-      ];
+  const interval = setInterval(() => {
 
-      const random =
-        fakeResults[Math.floor(Math.random() * fakeResults.length)];
+    current += 10;
 
-      setResult(random);
+    setProgress(current);
 
-      setLoading(false);
+    if (current >= 100) {
+      clearInterval(interval);
+    }
 
-    }, 2500);
-  };
+  }, 200);
+
+  try {
+
+    const formData = new FormData();
+
+    formData.append("file", selectedFile);
+
+    const response = await fetch(
+      "http://127.0.0.1:8000/analyze/audio",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    const data = await response.json();
+
+    clearInterval(interval);
+
+    setProgress(100);
+
+    setResult(data);
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert("Backend connection failed");
+
+  }
+
+  setLoading(false);
+
+};
 
   return (
     <div
@@ -179,8 +189,15 @@ const interval = setInterval(() => {
   accept="audio/*,video/*"
   style={{ display: "none" }}
   onChange={(e) => {
+
     if (e.target.files[0]) {
-      setFileName(e.target.files[0].name);
+
+      setSelectedFile(e.target.files[0]);
+
+      setFileName(
+        e.target.files[0].name
+      );
+
     }
   }}
 />
