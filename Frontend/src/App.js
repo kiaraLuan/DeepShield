@@ -3,6 +3,8 @@ import { useState } from "react";
 function App() {
 
   const [loading, setLoading] = useState(false);
+  const [fileName, setFileName] = useState("");
+  const [progress, setProgress] = useState(0);
 
   const [result, setResult] = useState({
     score: "28%",
@@ -13,6 +15,20 @@ function App() {
   const analyzeMedia = () => {
 
     setLoading(true);
+    setProgress(0);
+    let current = 0;
+
+const interval = setInterval(() => {
+
+  current += 10;
+
+  setProgress(current);
+
+  if (current >= 100) {
+    clearInterval(interval);
+  }
+
+}, 200);
 
     setTimeout(() => {
 
@@ -157,11 +173,17 @@ function App() {
               }}
             >
 
+              
               <input
-                type="file"
-                accept="audio/*,video/*"
-                style={{ display: "none" }}
-              />
+  type="file"
+  accept="audio/*,video/*"
+  style={{ display: "none" }}
+  onChange={(e) => {
+    if (e.target.files[0]) {
+      setFileName(e.target.files[0].name);
+    }
+  }}
+/>
 
               <p
                 style={{
@@ -188,6 +210,17 @@ function App() {
                 }}
               >
                 Supported: audio/video up to 60 seconds
+                {fileName && (
+  <p
+    style={{
+      marginTop: "10px",
+      color: "#60a5fa",
+      fontSize: "12px"
+    }}
+  >
+    Uploaded: {fileName}
+  </p>
+)}
               </p>
 
             </label>
@@ -210,6 +243,50 @@ function App() {
               }}
             >
               {loading ? "Scanning Media..." : "Analyze Media"}
+              {loading && (
+  <div
+    style={{
+      marginTop: "16px",
+    }}
+  >
+
+    <p
+      style={{
+        fontSize: "12px",
+        color: "#9ca3af",
+        marginBottom: "6px"
+      }}
+    >
+      AI scanning in progress... {progress}%
+    </p>
+
+    <div
+      style={{
+        width: "100%",
+        height: "8px",
+        backgroundColor: "#020617",
+        borderRadius: "999px",
+        overflow: "hidden"
+      }}
+    >
+      <div
+        style={{
+          width: `${progress}%`,
+          height: "100%",
+          background:
+  result.risk === "HIGH"
+    ? "linear-gradient(to right, #f97316, #ef4444)"
+    : result.risk === "MEDIUM"
+    ? "linear-gradient(to right, #eab308, #f97316)"
+    : "linear-gradient(to right, #22c55e, #16a34a)",
+            
+          transition: "width 0.2s ease"
+        }}
+      />
+    </div>
+
+  </div>
+)}
             </button>
 
             <p
@@ -278,7 +355,12 @@ function App() {
 
               <span
                 style={{
-                  color: "#60a5fa",
+                  color:
+  result.risk === "HIGH"
+    ? "#f87171"
+    : result.risk === "MEDIUM"
+    ? "#facc15"
+    : "#4ade80",
                   fontWeight: 600
                 }}
               >
@@ -300,7 +382,17 @@ function App() {
                   height: "100%",
                   borderRadius: "999px",
                   background:
-                    "linear-gradient(to right, #2563eb, #ef4444)",
+  result.risk === "HIGH"
+    ? "linear-gradient(to right, #f97316, #ef4444)"
+    : result.risk === "MEDIUM"
+    ? "linear-gradient(to right, #facc15, #eab308)"
+    : "linear-gradient(to right, #4ade80, #16a34a)",
+    boxShadow:
+  result.risk === "HIGH"
+    ? "0 0 18px rgba(239,68,68,0.5)"
+    : result.risk === "MEDIUM"
+    ? "0 0 18px rgba(250,204,21,0.5)"
+    : "0 0 18px rgba(74,222,128,0.5)",
                 }}
               />
             </div>
