@@ -2,6 +2,7 @@ from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 import shutil, os, uuid
 from audio_detector import analyze_audio
+from video_detector import analyze_video
 
 app = FastAPI()
 
@@ -15,6 +16,7 @@ app.add_middleware(
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
 
 @app.get("/")
 def home():
@@ -31,7 +33,10 @@ async def analyze_audio_api(file: UploadFile = File(...)):
         shutil.copyfileobj(file.file, buffer)
 
     try:
-        result = analyze_audio(filepath)
+        if ext.lower() in VIDEO_EXTENSIONS:
+            result = analyze_video(filepath)
+        else:
+            result = analyze_audio(filepath)
     finally:
         # Always clean up, even if analysis throws
         if os.path.exists(filepath):
